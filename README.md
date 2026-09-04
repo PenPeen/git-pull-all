@@ -72,6 +72,29 @@ launchctl kickstart -p gui/$(id -u)/local.git-pull-all
 
 Mac がスリープしていて実行時刻を過ぎた場合、launchd は復帰後に一度だけ実行する。
 
+### 対象がデスクトップ・書類・ダウンロード配下にある場合
+
+macOS はこれらのディレクトリをアクセス制御（TCC）で保護している。ターミナルから手で
+実行する分には問題ないが、launchd から起動したプロセスは権限を持たないため、ログが
+こうなる。
+
+```
+ls: /Users/you/Desktop/repos: Operation not permitted
+fatal: Unable to read current working directory: Operation not permitted
+```
+
+スクリプト自体を保護対象外の場所に置いても解決しない。読みに行く先が保護されている
+ためで、`/bin/bash` にフルディスクアクセスを与える必要がある。
+
+1. システム設定 > プライバシーとセキュリティ > フルディスクアクセス を開く
+2. 「+」を押し、ファイル選択ダイアログで `Cmd+Shift+G` を押して `/bin/bash` を入力して追加
+3. 追加された `bash` のトグルをオンにする
+4. `./install.sh <directory>` を実行し直してジョブを登録し直す
+
+`/bin/bash` を経由するすべてのバックグラウンド処理に権限が及ぶ点は理解したうえで
+設定する。避けたい場合は、対象のリポジトリ群を保護対象外の場所（`~/src` など）に
+置くとこの設定は不要になる。
+
 ## 前提
 
 fetch は認証プロンプトを出さない設定（`GIT_TERMINAL_PROMPT=0`、SSH は `BatchMode=yes`）で
