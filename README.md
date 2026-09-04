@@ -44,19 +44,21 @@ scratch                                      skip no origin remote
 
 ## 毎日自動で実行する
 
-`install.sh` が launchd のジョブ（毎日 12:00）を登録する。
+`install.sh` が launchd のジョブを登録する。ログイン時と毎日 12:00 に走る。
 
 ```sh
 ./install.sh ~/path/to/repos
 ```
 
-登録されるもの:
+作られるもの:
 
+- `~/Applications/git-pull-all.app` — launchd から呼ばれる起動用のラッパー（後述）
 - `~/Library/LaunchAgents/local.git-pull-all.plist`
 - ログ `~/Library/Logs/git-pull-all.log`（追記される）
 
-時刻を変えるときは `launchd/local.git-pull-all.plist` の `StartCalendarInterval` を
-編集してから `install.sh` を実行し直す。
+時刻を変えるときは `launchd/local.git-pull-all.plist` の `StartCalendarInterval` を、
+ログイン時の実行が不要なら同じファイルの `RunAtLoad` を編集してから `install.sh` を
+実行し直す。
 
 その場で一度動かす:
 
@@ -84,16 +86,21 @@ fatal: Unable to read current working directory: Operation not permitted
 ```
 
 スクリプト自体を保護対象外の場所に置いても解決しない。読みに行く先が保護されている
-ためで、`/bin/bash` にフルディスクアクセスを与える必要がある。
+ためで、実行する側にフルディスクアクセスを与える必要がある。
 
-1. システム設定 > プライバシーとセキュリティ > フルディスクアクセス を開く
-2. 「+」を押し、ファイル選択ダイアログで `Cmd+Shift+G` を押して `/bin/bash` を入力して追加
-3. 追加された `bash` のトグルをオンにする
-4. `./install.sh <directory>` を実行し直してジョブを登録し直す
+判定の主体はシェルスクリプトではなく、それを解釈する `/bin/bash` になる。`/bin/bash`
+は SIP に保護されていて、macOS 26 ではフルディスクアクセスの一覧に追加しても登録
+されない。そこで `install.sh` は `~/Applications/git-pull-all.app` という小さな
+ラッパーをビルドし、launchd からはそれを呼ぶ。中身は受け取った引数をそのまま bash に
+渡して `execv` するだけで（`app/runner.c`）、exec した bash はこのバンドルの権限を
+引き継ぐ。`.app` なのでフルディスクアクセスに登録できる。
 
-`/bin/bash` を経由するすべてのバックグラウンド処理に権限が及ぶ点は理解したうえで
-設定する。避けたい場合は、対象のリポジトリ群を保護対象外の場所（`~/src` など）に
-置くとこの設定は不要になる。
+1. `./install.sh <directory>` を実行して `.app` をビルドする
+2. システム設定 > プライバシーとセキュリティ > フルディスクアクセス を開く
+3. 「+」を押し、`Cmd+Shift+G` で `~/Applications/git-pull-all.app` を入力して追加する
+4. 追加された `git-pull-all` のトグルをオンにする
+
+対象のリポジトリ群を保護対象外の場所（`~/src` など）に置く場合、この設定は不要。
 
 ## 前提
 
