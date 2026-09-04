@@ -14,6 +14,7 @@ readonly STASH_MESSAGE="git-pull-all: auto stash"
 ok_count=0
 warn_count=0
 fail_count=0
+failed_repos=()
 
 usage() {
   cat <<'USAGE'
@@ -46,7 +47,34 @@ record_warn() {
 
 record_fail() {
   fail_count=$((fail_count + 1))
+  failed_repos+=("$1")
   report "$1" "fail" "$2"
+}
+
+# 無人で走るので、ログを見なくても失敗に気づけるよう通知センターに出す。
+# terminal-notifier は自前のバンドルを持つぶん通知が届きやすい。無い環境では
+# osascript にフォールバックする（スクリプトエディタの通知が許可されていないと届かない）。
+notify_failures() {
+  local name message
+  local sender=()
+
+  # install.sh が作る .app があれば、その名前とアイコンで通知を出す。
+  [ -d "$HOME/Applications/git-pull-all.app" ] && sender=(-sender local.git-pull-all)
+
+  for name in "${failed_repos[@]}"; do
+    message="$name の更新に失敗しました"
+
+    if command -v terminal-notifier >/dev/null 2>&1; then
+      terminal-notifier "${sender[@]}" -title "git-pull-all" -message "$message" >/dev/null 2>&1
+      continue
+    fi
+
+    osascript \
+      -e 'on run {body}' \
+      -e 'display notification body with title "git-pull-all"' \
+      -e 'end run' \
+      "$message" >/dev/null 2>&1
+  done
 }
 
 record_skip() {
@@ -181,7 +209,11 @@ main() {
   done < <(find "$root" -mindepth 2 -maxdepth 2 -name .git -type d -exec dirname {} \; | sort)
 
   printf -- '--- ok=%d warn=%d fail=%d\n' "$ok_count" "$warn_count" "$fail_count"
-  [ "$fail_count" -eq 0 ]
+
+  if [ "$fail_count" -gt 0 ]; then
+    notify_failures
+    return 1
+  fi
 }
 
 main "$@"

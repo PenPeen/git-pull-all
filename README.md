@@ -46,6 +46,24 @@ scratch                                      skip no origin remote
 
 `fail` が 1 件でもあれば終了コードは 1 になる。
 
+## 失敗したときの通知
+
+`fail` になったリポジトリごとに、macOS の通知センターへ「&lt;リポジトリ名&gt; の更新に失敗しました」を
+出す。無人で走らせる以上、ログを開かなくても気づけるようにするため。`warn`（fast-forward
+できない、stash が戻せなかった）は通知しない。
+
+通知は [terminal-notifier](https://github.com/julienXX/terminal-notifier) があればそれを使い、
+無ければ `osascript` にフォールバックする。`osascript` の通知はスクリプトエディタの通知が
+許可されていないと届かないので、terminal-notifier を入れておくほうが確実。
+
+```sh
+brew install terminal-notifier
+```
+
+`install.sh` で `.app` を作ってあると、通知は `git-pull-all` の名前とアイコンで届く。数秒で
+消えるのが不便なら、システム設定 > 通知 > git-pull-all で通知スタイルを「バナー」から
+「通知」に変える。
+
 ## 毎日自動で実行する
 
 `install.sh` が launchd のジョブを登録する。ログイン時と毎日 12:00 に走る。
