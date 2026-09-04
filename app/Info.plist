@@ -10,6 +10,8 @@
   <string>git-pull-all</string>
   <key>CFBundleDisplayName</key>
   <string>git-pull-all</string>
+  <key>CFBundleIconFile</key>
+  <string>git-pull-all</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

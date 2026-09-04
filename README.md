@@ -1,4 +1,8 @@
-# git-pull-all
+<p align="center">
+  <img src="assets/icon.png" alt="git-pull-all" width="256">
+</p>
+
+<h1 align="center">git-pull-all</h1>
 
 指定したディレクトリの直下にある Git リポジトリを一括で最新にする macOS 向けのスクリプト。
 チェックアウト中のブランチは切り替えないので、作業中の feature ブランチはそのまま残る。

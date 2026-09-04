@@ -29,11 +29,28 @@ unload_if_loaded() {
   launchctl bootout "$domain/$LABEL" 2>/dev/null || true
 }
 
+build_icon() {
+  local iconset size
+  iconset=$(mktemp -d)/git-pull-all.iconset
+  mkdir -p "$iconset"
+
+  for size in 16 32 128 256 512; do
+    sips -z "$size" "$size" "$here/assets/icon.png" \
+      --out "$iconset/icon_${size}x${size}.png" >/dev/null
+    sips -z "$((size * 2))" "$((size * 2))" "$here/assets/icon.png" \
+      --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+  done
+
+  iconutil --convert icns "$iconset" --output "$app_path/Contents/Resources/git-pull-all.icns"
+  rm -rf "$(dirname -- "$iconset")"
+}
+
 build_app() {
   rm -rf "$app_path"
-  mkdir -p "$app_path/Contents/MacOS"
+  mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
   cp "$here/app/Info.plist" "$app_path/Contents/Info.plist"
   xcrun clang -O2 -o "$app_path/Contents/MacOS/git-pull-all" "$here/app/runner.c"
+  build_icon
   codesign --force --sign - "$app_path"
 }
 
