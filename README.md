@@ -46,11 +46,11 @@ scratch                                      skip no origin remote
 
 `fail` が 1 件でもあれば終了コードは 1 になる。
 
-## 失敗したときの通知
+## 実行結果の通知
 
-`fail` になったリポジトリごとに、macOS の通知センターへ「&lt;リポジトリ名&gt; の更新に失敗しました」を
-出す。無人で走らせる以上、ログを開かなくても気づけるようにするため。`warn`（fast-forward
-できない、stash が戻せなかった）は通知しない。
+実行 1 回につき 1 件、macOS の通知センターへ `ok=2 warn=1 fail=0` の形で件数を出す。`fail` が
+あれば `/ 失敗: my-app, old-tool` が続く。無人で走らせる以上、ログを開かなくても結果が分かる
+ようにするため。成功時も出すので、通知が来ないこと自体でジョブが走っていないと気づける。
 
 通知は [terminal-notifier](https://github.com/julienXX/terminal-notifier) があればそれを使い、
 無ければ `osascript` にフォールバックする。`osascript` の通知はスクリプトエディタの通知が

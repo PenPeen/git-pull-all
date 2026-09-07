@@ -51,30 +51,34 @@ record_fail() {
   report "$1" "fail" "$2"
 }
 
-# 無人で走るので、ログを見なくても失敗に気づけるよう通知センターに出す。
+# 無人で走るので、ログを見なくても実行結果に気づけるよう通知センターに出す。
+# 実行 1 回につき 1 件。通知が出ないこと自体が「動いていない」ことのしるしになるよう、
+# 失敗が無いときも出す。
 # terminal-notifier は自前のバンドルを持つぶん通知が届きやすい。無い環境では
 # osascript にフォールバックする（スクリプトエディタの通知が許可されていないと届かない）。
-notify_failures() {
-  local name message
+notify_summary() {
+  local message names
   local sender=()
 
   # install.sh が作る .app があれば、その名前とアイコンで通知を出す。
   [ -d "$HOME/Applications/git-pull-all.app" ] && sender=(-sender local.git-pull-all)
 
-  for name in "${failed_repos[@]}"; do
-    message="$name の更新に失敗しました"
+  printf -v message 'ok=%d warn=%d fail=%d' "$ok_count" "$warn_count" "$fail_count"
+  if [ "$fail_count" -gt 0 ]; then
+    printf -v names '%s, ' "${failed_repos[@]}"
+    message="$message / 失敗: ${names%, }"
+  fi
 
-    if command -v terminal-notifier >/dev/null 2>&1; then
-      terminal-notifier "${sender[@]}" -title "git-pull-all" -message "$message" >/dev/null 2>&1
-      continue
-    fi
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    terminal-notifier "${sender[@]}" -title "git-pull-all" -message "$message" >/dev/null 2>&1
+    return
+  fi
 
-    osascript \
-      -e 'on run {body}' \
-      -e 'display notification body with title "git-pull-all"' \
-      -e 'end run' \
-      "$message" >/dev/null 2>&1
-  done
+  osascript \
+    -e 'on run {body}' \
+    -e 'display notification body with title "git-pull-all"' \
+    -e 'end run' \
+    "$message" >/dev/null 2>&1
 }
 
 record_skip() {
@@ -210,8 +214,9 @@ main() {
 
   printf -- '--- ok=%d warn=%d fail=%d\n' "$ok_count" "$warn_count" "$fail_count"
 
+  notify_summary
+
   if [ "$fail_count" -gt 0 ]; then
-    notify_failures
     return 1
   fi
 }
