@@ -82,7 +82,7 @@ brew install terminal-notifier
 ログイン時の実行が不要なら同じファイルの `RunAtLoad` を編集してから `install.sh` を
 実行し直す。
 
-その場で一度動かす:
+その場で一度動かす。`~/Applications/git-pull-all.app` をダブルクリックしても同じ:
 
 ```sh
 launchctl kickstart -p gui/$(id -u)/local.git-pull-all
